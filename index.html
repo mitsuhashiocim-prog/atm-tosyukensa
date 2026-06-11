@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>整形外科的テストナビ</title>
-<!-- v20260606101005 -->
+<!-- v20260611090704 -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1037,6 +1037,23 @@ body.proj-mode .modal {
   background:#111 !important;
   max-width:96vw !important;
   max-height:96vh !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+body.proj-mode .modal-body {
+  overflow:hidden !important;
+  flex:1;
+  display:flex !important;
+  flex-direction:column !important;
+}
+body.proj-mode .exam-grid {
+  overflow:hidden !important;
+  flex:1;
+}
+/* 投影モード：画面外カードを非表示 */
+body.proj-mode .exam-card {
+  visibility:visible;
 }
 body.proj-mode .modal-header {
   background:#000 !important;
@@ -1119,7 +1136,7 @@ body.proj-mode .setup-start-btn {
     </svg>
   </button>
   <div class="header-logo">
-    <span class="logo-main">整形外科的</span><span class="logo-accent">テストナビ</span><a href="https://mitsuhashiocim-prog.github.io/" style="font-size:10px;color:rgba(255,255,255,0.6);text-decoration:none;border:1px solid rgba(255,255,255,0.25);border-radius:999px;padding:2px 9px;white-space:nowrap;margin-left:4px;">トップページ</a>
+    <span class="logo-main">整形外科的</span><span class="logo-accent">テストナビ</span>
     
   </div>
 
@@ -2067,7 +2084,24 @@ function startExam() {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  exam.questions = pool.slice(0, exam.count);
+  // 同時出題しない組み合わせ（先の検査を優先、後の検査を除外）
+  const EXCLUDE_PAIRS = [
+    ['下肢伸展挙上テスト（SLR）', 'ガワーズ・ブラガード徴候'],
+    ['アイヒホッフテスト',         'フィンケルシュタインテスト'],
+    ['大腿神経伸展テスト（FNS）',   'エリー徴候'],
+  ];
+  let sliced = pool.slice(0, exam.count);
+  for (const [nameA, nameB] of EXCLUDE_PAIRS) {
+    const hasA = sliced.some(t => t.name === nameA);
+    const hasB = sliced.some(t => t.name === nameB);
+    if (hasA && hasB) {
+      sliced = sliced.filter(t => t.name !== nameB);
+      const exclude = new Set([nameA, nameB]);
+      const replacement = pool.slice(exam.count).find(t => !sliced.includes(t) && !exclude.has(t.name));
+      if (replacement) sliced.push(replacement);
+    }
+  }
+  exam.questions = sliced;
   exam.judges = {};
   exam.revealed = {};
   exam.questions.forEach((_, i) => { exam.judges[i] = null; exam.revealed[i] = {}; });
@@ -2211,12 +2245,33 @@ let projMode = false;
 function toggleProjMode() {
   projMode = !projMode;
   document.body.classList.toggle('proj-mode', projMode);
-  // ボタンだけ更新
   const btn = document.getElementById('proj-btn');
   if (btn) {
     btn.classList.toggle('active', projMode);
     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>${projMode?'通常表示':'投影モード'}`;
   }
+  applyProjVisibility();
+}
+
+function applyProjVisibility() {
+  const grid = document.getElementById('exam-grid');
+  if (!grid) return;
+  const cards = grid.querySelectorAll('.exam-card');
+  if (!projMode) {
+    // 通常モード：全カード表示
+    cards.forEach(c => c.style.visibility = '');
+    return;
+  }
+  // 投影モード：グリッドの表示領域に収まるカードだけ表示
+  // 少し遅延してレイアウト確定後に判定
+  requestAnimationFrame(() => {
+    const gridRect = grid.getBoundingClientRect();
+    cards.forEach(c => {
+      const rect = c.getBoundingClientRect();
+      // カードの下端がグリッドの下端を超えたら非表示
+      c.style.visibility = rect.bottom <= gridRect.bottom + 4 ? '' : 'hidden';
+    });
+  });
 }
 
 function shortName(name) {
@@ -2294,6 +2349,9 @@ function renderExamList() {
         結果を見る →
       </button>
     </div>`;
+
+  // 投影モード中なら再適用
+  if (projMode) requestAnimationFrame(applyProjVisibility);
 }
 
 function renderScoreBar(sc) {
