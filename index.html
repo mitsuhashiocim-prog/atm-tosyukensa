@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>整形外科的テストナビ</title>
-<!-- v20260618053304 -->
+<!-- v20260618055406 -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -745,10 +745,7 @@ mark{background:#ffe066;color:#5a3000;border-radius:2px;padding:0 2px;font-weigh
 .timer-clock.danger  { color:#f07060;animation:timerPulse 0.5s ease infinite; }
 @keyframes timerPulse { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
 
-.timer-sub {
-  font-size:0.7rem;color:rgba(255,255,255,0.45);
-  margin-top:3px;
-}
+.timer-sub { display:none; }
 .timer-pause-btn {
   margin-left:auto;
   background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
@@ -757,6 +754,13 @@ mark{background:#ffe066;color:#5a3000;border-radius:2px;padding:0 2px;font-weigh
   transition:background 0.12s;flex-shrink:0;
 }
 .timer-pause-btn:hover { background:rgba(255,255,255,0.22); }
+.timer-oral-btn {
+  background:rgba(96,200,255,0.2);border:1px solid rgba(96,200,255,0.4);
+  color:#a0e8ff;border-radius:8px;padding:6px 12px;
+  font-family:'Noto Sans JP',sans-serif;font-size:0.8rem;cursor:pointer;
+  transition:background 0.12s;flex-shrink:0;white-space:nowrap;
+}
+.timer-oral-btn:hover { background:rgba(96,200,255,0.35); }
 
 /* 時間切れバナー */
 .timer-expired-banner {
@@ -1148,6 +1152,25 @@ body.proj-mode .setup-start-btn {
 .oral-btn.reset{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.12);}
 .oral-done-msg{text-align:center;font-size:0.88rem;font-weight:700;color:#4de890;margin-top:0.5rem;display:none;}
 .oral-done-msg.visible{display:block;}
+
+/* 口頭試問インラインタイマー */
+.timer-section-inner {
+  display:flex;align-items:center;gap:14px;flex:1;
+}
+.oral-inline-section {
+  display:flex;align-items:center;gap:12px;flex:1;
+  border-left:1px solid rgba(255,255,255,0.2);
+  padding-left:16px;margin-left:4px;
+}
+.oral-inline-donut { position:relative;flex-shrink:0; }
+.oral-inline-donut svg { display:block; }
+.oral-inline-clock {
+  font-size:1.6rem;font-weight:900;color:#a0e8ff;
+  font-variant-numeric:tabular-nums;line-height:1;
+}
+.oral-inline-clock.warning { color:#f0d060;animation:timerPulse 1s ease infinite; }
+.oral-inline-clock.danger  { color:#f07060;animation:timerPulse 0.5s ease infinite; }
+.oral-inline-clock.done    { color:#4de890; }
 </style>
 </head>
 <body>
@@ -1619,6 +1642,11 @@ document.addEventListener('keydown', e=>{
 function closeExamModal() {
   stopTimer();
   if(typeof oralExamReset==='function') oralExamReset();
+  // タイマーバーの表示をリセット
+  const inline = document.getElementById('oral-inline-section');
+  const timerInner = document.getElementById('timer-section-inner');
+  if (inline) inline.style.display = 'none';
+  if (timerInner) timerInner.style.display = '';
   projMode = false;
   document.body.classList.remove('proj-mode');
   document.getElementById('exam-modal').classList.remove('visible');
@@ -1994,7 +2022,7 @@ function updateTimerUI() {
   const warning = pctNum <= 25 && !danger;
   const state   = danger ? ' danger' : warning ? ' warning' : '';
   clock.className = 'timer-clock' + state;
-  if (sub) sub.textContent = '残り ' + pctNum + '%';
+
   if (fill) {
     const circ = 125.66;
     fill.setAttribute('stroke-dasharray', (pct * circ) + ' ' + circ);
@@ -2008,17 +2036,33 @@ function toggleTimerPause() {
   if (btn) btn.textContent = timerState.paused ? '再開' : '一時停止';
 }
 
+function startOralFromTimer() {
+  const inline = document.getElementById('oral-inline-section');
+  const timerInner = document.getElementById('timer-section-inner');
+  if (inline && timerInner) {
+    timerInner.style.display = 'none';
+    inline.style.display = 'flex';
+  }
+  oralExamReset();
+  setTimeout(oralExamStart, 300);
+}
+
 function onTimerExpired() {
   const banner = document.getElementById('timer-expired-banner');
   if (banner) banner.classList.add('visible');
   const clock = document.getElementById('timer-clock');
   if (clock) { clock.textContent = '00:00'; clock.className = 'timer-clock danger'; }
-  const sub = document.getElementById('timer-sub');
-  if (sub) sub.textContent = '残り 0%';
+
   const fill = document.getElementById('timer-donut-fill');
   if (fill) { fill.setAttribute('stroke-dasharray','0 125.66'); fill.className.baseVal='timer-donut-fill danger'; }
-  const oralSection = document.getElementById('oral-exam-section');
-  if (oralSection) { oralSection.style.display=''; oralSection.scrollIntoView({behavior:'smooth',block:'nearest'}); setTimeout(oralExamStart,800); }
+  // 上部タイマーを口頭試問に切り替え
+  const inline = document.getElementById('oral-inline-section');
+  const timerInner = document.getElementById('timer-section-inner');
+  if (inline && timerInner) {
+    timerInner.style.display = 'none';
+    inline.style.display = 'flex';
+  }
+  setTimeout(oralExamStart, 800);
 }
 
 /* モーダル開閉 */
@@ -2032,6 +2076,11 @@ function openExamSetup() {
 function closeExamModal() {
   stopTimer();
   if(typeof oralExamReset==='function') oralExamReset();
+  // タイマーバーの表示をリセット
+  const inline = document.getElementById('oral-inline-section');
+  const timerInner = document.getElementById('timer-section-inner');
+  if (inline) inline.style.display = 'none';
+  if (timerInner) timerInner.style.display = '';
   projMode = false;
   document.body.classList.remove('proj-mode');
   document.getElementById('exam-modal').classList.remove('visible');
@@ -2387,18 +2436,37 @@ function renderExamList() {
       </div>
     </div>
     <div class="timer-bar${exam.timerEnabled?' visible':''}" id="timer-bar">
-      <div class="timer-donut">
-        <svg width="52" height="52" viewBox="0 0 52 52">
-          <circle class="timer-donut-track" cx="26" cy="26" r="20"/>
-          <circle class="timer-donut-fill" id="timer-donut-fill" cx="26" cy="26" r="20"
-            stroke-dasharray="125.66 125.66"/>
-        </svg>
+      <!-- 試験タイマー -->
+      <div class="timer-section-inner" id="timer-section-inner">
+        <div class="timer-donut">
+          <svg width="52" height="52" viewBox="0 0 52 52">
+            <circle class="timer-donut-track" cx="26" cy="26" r="20"/>
+            <circle class="timer-donut-fill" id="timer-donut-fill" cx="26" cy="26" r="20"
+              stroke-dasharray="125.66 125.66"/>
+          </svg>
+        </div>
+        <div>
+          <div class="timer-clock" id="timer-clock">--:--</div>
+        </div>
+        <button class="timer-pause-btn" id="timer-pause-btn" onclick="toggleTimerPause()">一時停止</button>
+        <button class="timer-oral-btn" onclick="startOralFromTimer()">🎤 口頭試問</button>
       </div>
-      <div>
-        <div class="timer-clock" id="timer-clock">--:--</div>
-        <div class="timer-sub" id="timer-sub">残り時間</div>
+      <!-- 口頭試問タイマー（インライン） -->
+      <div class="oral-inline-section" id="oral-inline-section" style="display:none;">
+        <div class="oral-inline-donut">
+          <svg width="44" height="44" viewBox="0 0 44 44">
+            <circle class="oral-donut-track" cx="22" cy="22" r="17" stroke-width="5"/>
+            <circle class="oral-donut-fill" id="oral-exam-fill" cx="22" cy="22" r="17"
+              stroke-dasharray="106.81 106.81" transform="rotate(-90 22 22)" stroke-width="5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="oral-inline-clock" id="oral-exam-clock">2:00</div>
+        </div>
+        <button class="timer-pause-btn" id="oral-exam-pause-btn" onclick="oralExamPause()" style="display:none">一時停止</button>
+        <button class="timer-pause-btn" id="oral-exam-start-btn" onclick="oralExamStart()">▶ 再開</button>
+        <button class="timer-oral-btn" onclick="oralExamReset()">↺</button>
       </div>
-      <button class="timer-pause-btn" id="timer-pause-btn" onclick="toggleTimerPause()">一時停止</button>
     </div>
     <div class="timer-expired-banner" id="timer-expired-banner">⏰ 時間切れ！　採点して結果を確認してください</div>
     <div class="exam-score-bar" id="exam-score-bar">
@@ -2574,20 +2642,20 @@ function oralExamUpdateUI() {
   clock.textContent = Math.floor(r/60) + ':' + String(r%60).padStart(2,'0');
   const pct = r / ORAL_EXAM_TOTAL; const pctN = Math.round(pct*100);
   const state = pctN<=10?' danger':pctN<=25?' warning':'';
-  clock.className = 'oral-clock' + state;
-  if (fill) { fill.setAttribute('stroke-dasharray',(pct*175.93)+' 175.93'); fill.className.baseVal='oral-donut-fill'+state; }
+  // インライン表示の場合はoral-inline-clock、下部表示の場合はoral-clock
+  clock.className = (clock.classList.contains('oral-inline-clock') ? 'oral-inline-clock' : 'oral-clock') + state;
+  const circ = 106.81;
+  if (fill) { fill.setAttribute('stroke-dasharray',(pct*circ)+' '+circ); fill.className.baseVal='oral-donut-fill'+state; }
 }
 function oralExamExpired() {
   const clock=document.getElementById('oral-exam-clock');
-  const dm=document.getElementById('oral-exam-done-msg');
+  const fill=document.getElementById('oral-exam-fill');
   const sb=document.getElementById('oral-exam-start-btn');
   const pb=document.getElementById('oral-exam-pause-btn');
-  const fill=document.getElementById('oral-exam-fill');
-  if(clock){clock.textContent='0:00';clock.className='oral-clock done';}
-  if(dm) dm.classList.add('visible');
-  if(sb){sb.style.display='';sb.innerHTML='▶ スタート';}
+  if(clock){clock.textContent='0:00';clock.className=(clock.classList.contains('oral-inline-clock')?'oral-inline-clock':'oral-clock')+' done';}
+  if(sb){sb.style.display='';sb.innerHTML='▶ 再開';}
   if(pb) pb.style.display='none';
-  if(fill){fill.setAttribute('stroke-dasharray','0 175.93');fill.style.stroke='#4de890';}
+  if(fill){fill.setAttribute('stroke-dasharray','0 106.81');fill.style.stroke='#4de890';}
 }
 
 /* ════ 口頭試問タイマー（結果画面） ════ */
