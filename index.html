@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>整形外科的テストナビ</title>
-<!-- v20260625041246 -->
+<!-- v20260625085610 -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1956,6 +1956,7 @@ let exam = {
   timerEnabled: false,
   timerMin: 3,
   timerSec: 0,
+  lastQuestions: [],
 };
 
 /* ── タイマー状態 ── */
@@ -2177,41 +2178,55 @@ function startExam() {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  // 同時出題しない組み合わせ（先の検査を優先、後の検査を除外）
+
+  // ── 同時出題しない組み合わせ ──
   const EXCLUDE_PAIRS = [
     ['下肢伸展挙上テスト（SLR）', 'ガワーズ・ブラガード徴候'],
     ['アイヒホッフテスト',         'フィンケルシュタインテスト'],
-    ['大腿神経伸展テスト（FNS）',   'エリー徴候'],
+    ['大腿神経伸展テスト（FNS）',  'エリー徴候'],
+    ['トムゼンテスト',             '逆トムゼンテスト'],
+    ['内反ストレステスト',         '外反ストレステスト'],
   ];
-  let sliced = pool.slice(0, exam.count);
 
-  // ペア除外
+  // ── 直前の出題履歴を除外 ──
+  const prevNames = new Set(exam.lastQuestions || []);
+
+  // プールから直前問題を後ろに回す（完全除外はしない。数が足りない場合に備え）
+  const preferred = pool.filter(t => !prevNames.has(t.name));
+  const fallback  = pool.filter(t =>  prevNames.has(t.name));
+  const ordered   = [...preferred, ...fallback];
+
+  let sliced = ordered.slice(0, exam.count);
+
+  // ── ペア除外 ──
   for (const [nameA, nameB] of EXCLUDE_PAIRS) {
     const hasA = sliced.some(t => t.name === nameA);
     const hasB = sliced.some(t => t.name === nameB);
     if (hasA && hasB) {
       sliced = sliced.filter(t => t.name !== nameB);
+      const usedNames = new Set(sliced.map(t => t.name));
       const exclude = new Set([nameA, nameB]);
-      const replacement = pool.slice(exam.count).find(t => !sliced.includes(t) && !exclude.has(t.name));
-      if (replacement) sliced.push(replacement);
+      const replacement = ordered.find(t => !usedNames.has(t.name) && !exclude.has(t.name));
+      if (replacement) { sliced.push(replacement); usedNames.add(replacement.name); }
     }
   }
 
-  // 腱反射は最大1問
+  // ── 腱反射は最大1問 ──
   const kenReflex = sliced.filter(t => t.category === '腱反射');
   if (kenReflex.length > 1) {
-    // 最初の1つだけ残し、残りを除外して補充
-    const keep = kenReflex[0];
     const toRemove = kenReflex.slice(1);
     sliced = sliced.filter(t => !toRemove.includes(t));
     const usedNames = new Set(sliced.map(t => t.name));
     for (const removed of toRemove) {
-      const replacement = pool.find(t => !usedNames.has(t.name) && t.category !== '腱反射');
+      const replacement = ordered.find(t => !usedNames.has(t.name) && t.category !== '腱反射');
       if (replacement) { sliced.push(replacement); usedNames.add(replacement.name); }
     }
   }
 
   exam.questions = sliced;
+  // ── 今回の出題履歴を保存 ──
+  exam.lastQuestions = sliced.map(t => t.name);
+
   exam.judges = {};
   exam.revealed = {};
   exam.questions.forEach((_, i) => { exam.judges[i] = null; exam.revealed[i] = {}; });
