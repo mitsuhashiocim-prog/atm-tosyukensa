@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>整形外科的テストナビ</title>
-<!-- v20260625085610 -->
+<!-- v20260628135801 -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -313,9 +313,41 @@ mark{background:#ffe066;color:#5a3000;border-radius:2px;padding:0 2px;font-weigh
   .detail-block.method,.detail-block.disease{grid-column:1;}
   .detail-txt{font-size:0.9rem;line-height:1.95;}
   .test-detail{padding:0.85rem 0.9rem;}
+
+  /* モーダル */
+  .modal{max-width:calc(100vw - 2rem);border-radius:12px;}
+  .modal-overlay{padding:0.75rem;}
+  .modal-body{padding:1rem;}
+  .modal-header{padding:0.85rem 1rem;}
+  /* 試験グリッド1列 */
+  .exam-grid{grid-template-columns:1fr !important;gap:6px;}
+  .exam-card{flex-direction:row;min-height:auto;padding:0.75rem 1rem;gap:10px;align-items:center;}
+  .exam-card-top{flex:1;align-items:center;}
+  .exam-card-name{font-size:1rem;}
+  .exam-card-bottom{flex-wrap:nowrap;gap:5px;flex-shrink:0;}
+  .exam-mini-chip{display:none;}
+  .card-judge-group{margin-left:0;gap:5px;}
+  .cjbtn{width:36px;height:36px;font-size:1rem;}
+  /* タイマーバー */
+  .timer-bar{gap:8px;padding:0.4rem 0.9rem;}
+  .timer-donut{width:40px;height:40px;}
+  .timer-clock{font-size:1.4rem;}
+  .oral-inline-clock{font-size:1.2rem;}
+  .timer-pause-btn{padding:4px 8px;font-size:0.72rem;}
+  .timer-oral-btn{padding:4px 8px;font-size:0.72rem;}
+  /* 記録テーブル */
+  .record-table{font-size:0.78rem;}
+  .record-table th,.record-table td{padding:5px 6px;}
+  /* ポップアップ詳細 */
+  .exam-detail-modal{border-radius:12px;}
+  .edm-header{padding:0.8rem 1rem;}
+  .edm-body{padding:0.85rem 1rem 1rem;}
+  .edm-jbtn{width:44px;height:44px;font-size:1.2rem;}
 }
 @media(min-width:768px) and (max-width:1024px){
-  :root{--sidebar-w:190px;}
+  :root{--sidebar-w:190px;
+  .modal{max-width:560px;}
+}
   .subheader{padding-left:calc(var(--sidebar-w) + 1.25rem);}
   .content{padding:1.5rem 1.25rem 4rem;}
   .test-disease-tag{max-width:130px;}
@@ -370,13 +402,15 @@ mark{background:#ffe066;color:#5a3000;border-radius:2px;padding:0 2px;font-weigh
 .modal-overlay{
   display:none;position:fixed;inset:0;z-index:1000;
   background:rgba(10,20,50,0.55);
-  align-items:flex-start;justify-content:center;
+  align-items:center;justify-content:center;
   padding:1rem;overflow-y:auto;
 }
 .modal-overlay.visible{display:flex;}
 .modal{
   background:#fff;border-radius:16px;
   width:100%;max-width:560px;
+  max-height:90vh;
+  overflow-y:auto;
   box-shadow:0 20px 60px rgba(0,0,0,0.25);
   animation:modalIn 0.22s ease;
   margin:auto;
@@ -508,6 +542,10 @@ mark{background:#ffe066;color:#5a3000;border-radius:2px;padding:0 2px;font-weigh
 .result-donut svg{display:block;margin:0 auto;}
 .result-score-txt{font-size:2rem;font-weight:700;color:var(--accent);}
 @media(min-width:768px) and (orientation:landscape){
+  /* モーダル幅 */
+  .modal{max-width:80vw;max-height:88vh;}
+  .record-list-modal{max-width:760px;}
+
   .result-score-txt{font-size:2.5rem;}
   .result-chip .rc-num{font-size:1.6rem;}
   .result-detail-item{font-size:0.95rem;padding:0.65rem 0;}
@@ -745,7 +783,10 @@ mark{background:#ffe066;color:#5a3000;border-radius:2px;padding:0 2px;font-weigh
 .timer-clock.danger  { color:#f07060;animation:timerPulse 0.5s ease infinite; }
 @keyframes timerPulse { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
 
-.timer-sub { display:none; }
+.timer-sub {
+  font-size:0.7rem;color:rgba(255,255,255,0.45);
+  margin-top:3px;
+}
 .timer-pause-btn {
   margin-left:auto;
   background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
@@ -754,13 +795,6 @@ mark{background:#ffe066;color:#5a3000;border-radius:2px;padding:0 2px;font-weigh
   transition:background 0.12s;flex-shrink:0;
 }
 .timer-pause-btn:hover { background:rgba(255,255,255,0.22); }
-.timer-oral-btn {
-  background:rgba(96,200,255,0.2);border:1px solid rgba(96,200,255,0.4);
-  color:#a0e8ff;border-radius:8px;padding:6px 12px;
-  font-family:'Noto Sans JP',sans-serif;font-size:0.8rem;cursor:pointer;
-  transition:background 0.12s;flex-shrink:0;white-space:nowrap;
-}
-.timer-oral-btn:hover { background:rgba(96,200,255,0.35); }
 
 /* 時間切れバナー */
 .timer-expired-banner {
@@ -1130,47 +1164,61 @@ body.proj-mode .setup-start-btn {
   body.proj-mode .exam-grid { gap:12px; }
 }
 
-/* ════ 口頭試問タイマー ════ */
-.oral-timer-section{margin-top:1.25rem;padding:1.1rem 1.25rem;background:#0a1a3a;border-radius:14px;border:1px solid #1a3a7a;}
-.oral-timer-label{font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:0.6rem;text-align:center;}
-.oral-timer-main{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:0.85rem;}
-.oral-donut{position:relative;width:72px;height:72px;flex-shrink:0;}
-.oral-donut svg{display:block;}
-.oral-donut-track{fill:none;stroke:rgba(255,255,255,0.1);stroke-width:7;}
-.oral-donut-fill{fill:none;stroke:#60c8ff;stroke-width:7;stroke-linecap:round;transition:stroke-dasharray 1s linear,stroke 0.5s;}
-.oral-donut-fill.warning{stroke:#f0d060;}
-.oral-donut-fill.danger{stroke:#f07060;}
-.oral-clock{font-size:3rem;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;line-height:1;text-shadow:0 2px 16px rgba(96,200,255,0.4);}
-.oral-clock.warning{color:#f0d060;animation:timerPulse 1s ease infinite;}
-.oral-clock.danger{color:#f07060;animation:timerPulse 0.5s ease infinite;}
-.oral-clock.done{color:#4de890;}
-.oral-timer-btns{display:flex;gap:8px;}
-.oral-btn{flex:1;padding:0.65rem;border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;}
-.oral-btn.start{background:#1a5cbf;color:#fff;}
-.oral-btn.start:hover{background:#2268d0;}
-.oral-btn.pause{background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2);}
-.oral-btn.reset{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.12);}
-.oral-done-msg{text-align:center;font-size:0.88rem;font-weight:700;color:#4de890;margin-top:0.5rem;display:none;}
-.oral-done-msg.visible{display:block;}
+.student-id-input{width:100%;padding:8px 12px;border:1px solid var(--border-m);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:0.95rem;color:var(--text);background:#fff;outline:none;}
+.student-id-input:focus{border-color:var(--accent);}
+.edm-detail-judges{margin-top:0.75rem;display:flex;flex-direction:column;gap:8px;}
+.edm-detail-judge-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--surface2);}
+.edm-detail-judge-lbl{font-size:0.72rem;font-weight:700;flex-shrink:0;min-width:60px;}
+.edm-detail-judge-lbl.positive{color:var(--c-positive);}
+.edm-detail-judge-lbl.disease{color:var(--c-disease);}
+.edm-detail-btns{display:flex;gap:5px;}
+.edm-djbtn{width:34px;height:34px;border-radius:7px;border:1.5px solid var(--border-m);background:var(--surface);font-size:0.95rem;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;justify-content:center;}
+.edm-djbtn.j-good.selected{background:#d6f0e2;border-color:#4da870;color:#0a4a2a;}
+.edm-djbtn.j-half.selected{background:#fff7d6;border-color:#d4a800;color:#6a4a00;}
+.edm-djbtn.j-bad.selected{background:#fde8e0;border-color:#cc5533;color:#6b1a00;}
+.result-student-id{text-align:center;font-size:0.9rem;color:var(--text-m);margin-bottom:0.5rem;font-weight:500;}
+.result-total-score{text-align:center;margin:0.5rem 0 0.75rem;}
+.result-total-score .score-big{font-size:2.8rem;font-weight:900;color:var(--accent);line-height:1;}
+.result-total-score .score-max{font-size:1rem;color:var(--text-f);margin-left:4px;}
+.result-detail-score{font-size:0.72rem;color:var(--text-f);margin-top:4px;}
+.result-breakdown-table{width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1rem;}
+.result-breakdown-table th{background:var(--accent);color:#fff;padding:5px 8px;font-weight:600;font-size:0.72rem;}
+.result-breakdown-table td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:center;}
+.result-breakdown-table .td-name{text-align:left;font-weight:500;}
+.score-good{color:#0a4a2a;font-weight:700;}.score-half{color:#6a4a00;font-weight:700;}.score-bad{color:#6b1a00;font-weight:700;}
+.score-cell{font-weight:700;color:var(--accent);}
+@media(max-width:767px){.exam-grid{grid-template-columns:1fr !important;gap:6px;}.exam-card{flex-direction:row;min-height:auto;padding:0.75rem 1rem;gap:10px;align-items:center;}.exam-card-top{flex:1;align-items:center;}.exam-card-name{font-size:1rem;}.exam-card-bottom{flex-wrap:nowrap;gap:5px;flex-shrink:0;}.exam-mini-chip{display:none;}.card-judge-group{margin-left:0;gap:5px;}.cjbtn{width:36px;height:36px;font-size:1rem;}}
 
-/* 口頭試問インラインタイマー */
-.timer-section-inner {
-  display:flex;align-items:center;gap:14px;flex:1;
+.timer-section-inner{display:flex;align-items:center;gap:10px;flex:1;width:100%;}
+.oral-inline-section{display:flex;align-items:center;gap:10px;flex:1;width:100%;
+  border-left:1px solid rgba(255,255,255,0.2);padding-left:14px;}
+.oral-inline-donut{flex-shrink:0;}
+.oral-inline-clock{font-size:1.6rem;font-weight:900;color:#a0e8ff;
+  font-variant-numeric:tabular-nums;line-height:1;}
+.timer-sub{display:none;}
+
+/* ════ 記録機能 ════ */
+.record-list-modal { max-width:680px; }
+.record-empty { text-align:center;color:var(--text-f);padding:2rem 0;font-size:0.9rem; }
+.record-table { width:100%;border-collapse:collapse;font-size:0.82rem; }
+.record-table th { background:var(--accent);color:#fff;padding:6px 10px;font-weight:600;font-size:0.72rem;letter-spacing:0.04em;text-align:left; }
+.record-table td { padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top; }
+.record-table tr:last-child td { border-bottom:none; }
+.record-table tr:hover td { background:var(--surface2); }
+.record-detail-btn { font-size:0.72rem;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline; }
+.record-actions { display:flex;gap:8px;margin-bottom:1rem; }
+.record-clear-btn { padding:6px 14px;border-radius:8px;background:var(--surface2);color:var(--text-m);border:1px solid var(--border-m);font-family:'Noto Sans JP',sans-serif;font-size:0.82rem;cursor:pointer; }
+.record-clear-btn:hover { background:#fde8e0;color:#6b1a00;border-color:#cc5533; }
+.record-save-btn {
+  width:100%;padding:0.7rem;border-radius:10px;
+  background:#1a5cbf;color:#fff;
+  border:none;font-family:'Noto Sans JP',sans-serif;font-size:0.9rem;font-weight:600;
+  cursor:pointer;transition:background 0.15s;margin-top:0.75rem;
+  display:flex;align-items:center;justify-content:center;gap:6px;
 }
-.oral-inline-section {
-  display:flex;align-items:center;gap:12px;flex:1;
-  border-left:1px solid rgba(255,255,255,0.2);
-  padding-left:16px;margin-left:4px;
-}
-.oral-inline-donut { position:relative;flex-shrink:0; }
-.oral-inline-donut svg { display:block; }
-.oral-inline-clock {
-  font-size:1.6rem;font-weight:900;color:#a0e8ff;
-  font-variant-numeric:tabular-nums;line-height:1;
-}
-.oral-inline-clock.warning { color:#f0d060;animation:timerPulse 1s ease infinite; }
-.oral-inline-clock.danger  { color:#f07060;animation:timerPulse 0.5s ease infinite; }
-.oral-inline-clock.done    { color:#4de890; }
+.record-save-btn:hover { background:#2268d0; }
+.record-saved-msg { text-align:center;font-size:0.82rem;color:#0a4a2a;background:#d6f0e2;border-radius:8px;padding:8px;margin-top:0.5rem;display:none; }
+.record-saved-msg.visible { display:block; }
 </style>
 </head>
 <body>
@@ -1253,10 +1301,28 @@ body.proj-mode .setup-start-btn {
         <div class="edm-val" id="edm-disease-val"></div>
       </div>
       <div class="edm-judge">
-        <span class="edm-judge-lbl">自己評価</span>
+        <span class="edm-judge-lbl">検査の理解</span>
         <button class="edm-jbtn j-good" id="edm-j-good" onclick="setJudgeFromDetail('good')">○</button>
         <button class="edm-jbtn j-half" id="edm-j-half" onclick="setJudgeFromDetail('half')">▲</button>
         <button class="edm-jbtn j-bad"  id="edm-j-bad"  onclick="setJudgeFromDetail('bad')">×</button>
+      </div>
+      <div class="edm-detail-judges">
+        <div class="edm-detail-judge-row" id="edm-pos-row">
+          <span class="edm-detail-judge-lbl positive">陽性所見</span>
+          <div class="edm-detail-btns">
+            <button class="edm-djbtn j-good" id="edm-dj-pos-good" onclick="setDetailJudge('positive','good')">○</button>
+            <button class="edm-djbtn j-half" id="edm-dj-pos-half" onclick="setDetailJudge('positive','half')">▲</button>
+            <button class="edm-djbtn j-bad"  id="edm-dj-pos-bad"  onclick="setDetailJudge('positive','bad')">×</button>
+          </div>
+        </div>
+        <div class="edm-detail-judge-row" id="edm-dis-row">
+          <span class="edm-detail-judge-lbl disease">鑑別疾患</span>
+          <div class="edm-detail-btns">
+            <button class="edm-djbtn j-good" id="edm-dj-dis-good" onclick="setDetailJudge('disease','good')">○</button>
+            <button class="edm-djbtn j-half" id="edm-dj-dis-half" onclick="setDetailJudge('disease','half')">▲</button>
+            <button class="edm-djbtn j-bad"  id="edm-dj-dis-bad"  onclick="setDetailJudge('disease','bad')">×</button>
+          </div>
+        </div>
       </div>
       <div class="edm-nav">
         <button class="edm-nav-btn" onclick="navDetail(-1)">
@@ -1284,6 +1350,11 @@ body.proj-mode .setup-start-btn {
         <span id="expand-label">すべて開く</span>
       </button>
       <div class="sidebar-divider"></div>
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-exam-btn" onclick="openRecordList()" style="background:linear-gradient(135deg,#1a4a2a,#2d8050);margin-top:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>記録一覧<span class="sidebar-exam-btn-sub">試験結果の履歴</span></span>
+      </button>
       <div class="sidebar-exam-wrap">
         <span class="sidebar-exam-label">✦ practice mode ✦</span>
         <button class="sidebar-exam-btn" onclick="openExamSetup()">
@@ -1298,6 +1369,12 @@ body.proj-mode .setup-start-btn {
     </div>
   </nav>
   <main class="content" id="main"></main>
+</div>
+
+
+<!-- 記録一覧モーダル -->
+<div class="modal-overlay" id="record-modal">
+  <div class="modal record-list-modal" id="record-modal-inner"></div>
 </div>
 
 <script>
@@ -1642,11 +1719,11 @@ document.addEventListener('keydown', e=>{
 function closeExamModal() {
   stopTimer();
   if(typeof oralExamReset==='function') oralExamReset();
-  // タイマーバーの表示をリセット
-  const inline = document.getElementById('oral-inline-section');
-  const timerInner = document.getElementById('timer-section-inner');
-  if (inline) inline.style.display = 'none';
-  if (timerInner) timerInner.style.display = '';
+  // タイマーバーを試験タイマーに戻す
+  var ti=document.getElementById('timer-section-inner');
+  var oi=document.getElementById('oral-inline-section');
+  if(ti) ti.style.display='';
+  if(oi) oi.style.display='none';
   projMode = false;
   document.body.classList.remove('proj-mode');
   document.getElementById('exam-modal').classList.remove('visible');
@@ -1660,149 +1737,57 @@ document.getElementById('exam-detail-overlay').addEventListener('click', functio
 });
 
 /* ── セットアップ画面 ── */
-function renderExamSetup() {
-  const avail = ALL.filter(t => examState.selectedCats.has(t.category)).length;
-  const maxCount = Math.min(avail, 30);
-  const curCount = Math.min(examState.count, maxCount);
-  examState.count = curCount;
 
-  const catBtns = CATS_ALL.map(c => {
-    const active = examState.selectedCats.has(c) ? 'active' : '';
-    const cnt = ALL.filter(t => t.category === c).length;
-    return `<button class="cat-check-btn ${active}" onclick="toggleExamCat('${c}')">${c}（${cnt}）</button>`;
-  }).join('');
 
-  document.getElementById('exam-modal-inner').innerHTML = `
-    <div class="modal-header">
-      <h2>試験モード — 設定</h2>
-      <button class="modal-close" onclick="closeExamModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="setup-section">
-        <div class="setup-label">出題カテゴリ（複数選択可）</div>
-        <div class="cat-check-grid" id="cat-check-grid">${catBtns}</div>
-      </div>
-      <div class="setup-section">
-        <div class="setup-label">出題数</div>
-        <div class="count-row">
-          <input type="range" id="count-range" min="1" max="${maxCount}" value="${curCount}"
-            oninput="updateCount(this.value)">
-          <span class="count-val" id="count-val">${curCount}</span>
-        </div>
-        <div class="available-note" id="avail-note">選択中：${avail}問から ${curCount}問を出題</div>
-      </div>
-      <button class="setup-start-btn" id="start-btn" onclick="startExam()" ${avail === 0 ? 'disabled' : ''}>
-        試験を開始する
-      </button>
-    </div>`;
-}
 
-function toggleExamCat(cat) {
-  if (examState.selectedCats.has(cat)) {
-    if (examState.selectedCats.size > 1) examState.selectedCats.delete(cat);
-  } else {
-    examState.selectedCats.add(cat);
-  }
-  renderExamSetup();
-}
 
-function updateCount(val) {
-  examState.count = parseInt(val);
-  const avail = ALL.filter(t => examState.selectedCats.has(t.category)).length;
-  document.getElementById('count-val').textContent = val;
-  document.getElementById('avail-note').textContent = `選択中：${avail}問から ${val}問を出題`;
-}
+
 
 /* ── 試験開始 ── */
 function startExam() {
-  const pool = ALL.filter(t => examState.selectedCats.has(t.category));
-  // シャッフル
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+  // タイマーバーを再表示
+  var tb=document.getElementById('timer-bar');
+  if(tb) tb.style.display='';
+  const pool = ALL.filter(t => exam.selectedCats.has(t.category));
+  for (let i = pool.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [pool[i],pool[j]]=[pool[j],pool[i]];
   }
-  examState.questions = pool.slice(0, examState.count);
-  examState.answers = {};
-  examState.questions.forEach((_, i) => {
-    examState.answers[i] = { method:'', positive:'', purpose:'', disease:'', judge: null, showAnswer: false };
-  });
-  examState.phase = 'exam';
-  renderExam();
+  const EXCL = [
+    ['下肢伸展挙上テスト（SLR）','ガワーズ・ブラガード徴候'],
+    ['アイヒホッフテスト','フィンケルシュタインテスト'],
+    ['大腿神経伸展テスト（FNS）','エリー徴候'],
+    ['トムゼンテスト','逆トムゼンテスト'],
+    ['内反ストレステスト','外反ストレステスト'],
+  ];
+  const prev = new Set(exam.lastQuestions||[]);
+  const ordered = [...pool.filter(t=>!prev.has(t.name)), ...pool.filter(t=>prev.has(t.name))];
+  let sliced = ordered.slice(0, exam.count);
+  for (const [a,b] of EXCL) {
+    if (sliced.some(t=>t.name===a) && sliced.some(t=>t.name===b)) {
+      sliced = sliced.filter(t=>t.name!==b);
+      const used=new Set(sliced.map(t=>t.name)), excl=new Set([a,b]);
+      const rep=ordered.find(t=>!used.has(t.name)&&!excl.has(t.name));
+      if(rep){sliced.push(rep);used.add(rep.name);}
+    }
+  }
+  const ken=sliced.filter(t=>t.category==='腱反射');
+  if(ken.length>1){
+    const rem=ken.slice(1); sliced=sliced.filter(t=>!rem.includes(t));
+    const used=new Set(sliced.map(t=>t.name));
+    for(const r of rem){const rep=ordered.find(t=>!used.has(t.name)&&t.category!=='腱反射');if(rep){sliced.push(rep);used.add(rep.name);}}
+  }
+  exam.questions=sliced;
+  exam.lastQuestions=sliced.map(t=>t.name);
+  exam.judges={}; exam.revealed={}; exam.detailJudges={};
+  exam.questions.forEach((_,i)=>{exam.judges[i]=null;exam.revealed[i]={};exam.detailJudges[i]={positive:null,disease:null};});
+  exam.phase='exam';
+  if(exam.timerEnabled) readTimerInputs();
+  renderExamList(); startTimer();
 }
 
 /* ── 試験画面 ── */
-function renderExam() {
-  const qs = examState.questions;
-  const judged = Object.values(examState.answers).filter(a => a.judge !== null).length;
-  const correct = Object.values(examState.answers).filter(a => a.judge === 'correct').length;
-  const pct = Math.round((judged / qs.length) * 100);
 
-  let items = qs.map((t, i) => {
-    const ans = examState.answers[i];
-    const fields = [
-      { key:'method',   lbl:'方法',     cls:'method' },
-      { key:'positive', lbl:'陽性所見', cls:'positive' },
-      { key:'purpose',  lbl:'意義',     cls:'purpose' },
-      { key:'disease',  lbl:'鑑別疾患', cls:'disease' },
-    ];
-    const fieldHtml = fields.map(f => {
-      if (!t[f.key]) return '';
-      return `<div class="exam-field ${f.cls}">
-        <div class="exam-field-lbl">${f.lbl}</div>
-        <textarea placeholder="${f.lbl}を入力…" oninput="saveAnswer(${i},'${f.key}',this.value)">${escHtml(ans[f.key])}</textarea>
-      </div>`;
-    }).join('');
-
-    const judgeClass = (j, target) => {
-      if (!ans.judge) return j === target ? j : '';
-      if (ans.judge === j) return `active-${j}`;
-      return j === target ? j : '';
-    };
-
-    const modelHtml = ans.showAnswer ? buildModelAnswer(t) : '';
-
-    return `<div class="exam-item" id="exam-item-${i}">
-      <div class="exam-item-header">
-        <span class="exam-item-num">Q${i+1}</span>
-        <span class="exam-item-name">${escHtml(t.name)}</span>
-        <span class="exam-item-cat">${escHtml(t.category)}</span>
-      </div>
-      <div class="exam-answer-area">
-        <div class="exam-fields">${fieldHtml}</div>
-        <button class="exam-show-answer-btn" onclick="toggleModelAnswer(${i})">
-          ${ans.showAnswer ? '▲ 模範解答を隠す' : '▼ 模範解答を見る'}
-        </button>
-        ${modelHtml}
-        <div class="exam-judge-row">
-          <button class="judge-btn correct ${judgeClass('correct','correct')}" onclick="setJudge(${i},'correct')">
-            ⭕ 正解
-          </button>
-          <button class="judge-btn incorrect ${judgeClass('incorrect','incorrect')}" onclick="setJudge(${i},'incorrect')">
-            ❌ 不正解
-          </button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('exam-modal-inner').innerHTML = `
-    <div class="modal-header" style="position:sticky;top:0;z-index:10;">
-      <h2>試験中 — ${qs.length}問</h2>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span class="exam-score-live">${correct}/${judged}問採点済</span>
-        <button class="modal-close" onclick="closeExamModal()">✕</button>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="exam-progress-bar"><div class="exam-progress-fill" style="width:${pct}%"></div></div>
-      <div class="exam-meta">
-        <span>${qs.length}問中 ${judged}問採点済み</span>
-        <span class="exam-score-live">正解 ${correct}問</span>
-      </div>
-      ${items}
-      <button class="exam-finish-btn" onclick="finishExam()">採点結果を見る</button>
-    </div>`;
-}
 
 function buildModelAnswer(t) {
   const rows = [
@@ -1814,132 +1799,12 @@ function buildModelAnswer(t) {
   return `<div class="exam-model-answer visible" style="display:block;">${rows}</div>`;
 }
 
-function saveAnswer(idx, key, val) {
-  examState.answers[idx][key] = val;
-}
-function toggleModelAnswer(idx) {
-  examState.answers[idx].showAnswer = !examState.answers[idx].showAnswer;
-  // テキストエリアの入力内容を保持したままpartial re-render
-  const item = document.getElementById(`exam-item-${idx}`);
-  if (!item) return;
-  const t = examState.questions[idx];
-  const ans = examState.answers[idx];
-  const btn = item.querySelector('.exam-show-answer-btn');
-  btn.textContent = ans.showAnswer ? '▲ 模範解答を隠す' : '▼ 模範解答を見る';
-  let modelEl = item.querySelector('.exam-model-answer');
-  if (ans.showAnswer) {
-    if (!modelEl) {
-      const div = document.createElement('div');
-      div.innerHTML = buildModelAnswer(t);
-      btn.insertAdjacentElement('afterend', div.firstChild);
-    }
-  } else {
-    if (modelEl) modelEl.remove();
-  }
-}
-function setJudge(idx, judge) {
-  examState.answers[idx].judge = examState.answers[idx].judge === judge ? null : judge;
-  // ボタンだけ差し替え
-  const item = document.getElementById(`exam-item-${idx}`);
-  const judged = Object.values(examState.answers).filter(a => a.judge !== null).length;
-  const correct = Object.values(examState.answers).filter(a => a.judge === 'correct').length;
-  if (item) {
-    const row = item.querySelector('.exam-judge-row');
-    const j = examState.answers[idx].judge;
-    row.querySelector('.judge-btn.correct').className   = `judge-btn correct${j==='correct'?' active-correct':''}`;
-    row.querySelector('.judge-btn.incorrect').className = `judge-btn incorrect${j==='incorrect'?' active-incorrect':''}`;
-  }
-  // ヘッダーのスコア更新
-  const scoreLive = document.querySelector('.exam-score-live');
-  if (scoreLive) scoreLive.textContent = `正解 ${correct}問`;
-  // meta行
-  const metas = document.querySelectorAll('.exam-meta span');
-  if (metas.length >= 2) {
-    metas[0].textContent = `${examState.questions.length}問中 ${judged}問採点済み`;
-    metas[1].textContent = `正解 ${correct}問`;
-  }
-}
+
+
+
 
 /* ── 結果画面 ── */
-function finishExam() {
-  examState.phase = 'result';
-  const qs = examState.questions;
-  const total = qs.length;
-  const judged = Object.values(examState.answers).filter(a => a.judge !== null).length;
-  const correct = Object.values(examState.answers).filter(a => a.judge === 'correct').length;
-  const incorrect = Object.values(examState.answers).filter(a => a.judge === 'incorrect').length;
-  const pct = judged > 0 ? Math.round((correct / judged) * 100) : 0;
-  const msg = pct >= 90 ? '🎉 素晴らしい！完璧に近い正答率です！'
-    : pct >= 70 ? '👍 よくできました！あと少しで完璧です。'
-    : pct >= 50 ? '📖 もう少し復習しましょう。'
-    : '💪 引き続き頑張りましょう！';
 
-  // SVG円グラフ
-  const r = 60, circ = 2 * Math.PI * r;
-  const fill = judged > 0 ? (correct / judged) * circ : 0;
-
-  document.getElementById('exam-modal-inner').innerHTML = `
-    <div class="modal-header">
-      <h2>試験結果</h2>
-      <button class="modal-close" onclick="closeExamModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="result-score-ring">
-        <div class="score-circle">
-          <svg viewBox="0 0 150 150">
-            <circle cx="75" cy="75" r="${r}" stroke="var(--accent-l)" stroke-width="10"/>
-            <circle cx="75" cy="75" r="${r}" stroke="var(--accent)" stroke-width="10"
-              stroke-dasharray="${fill} ${circ}"
-              stroke-dashoffset="${circ * 0.25}"
-              transform="rotate(-90 75 75)"/>
-          </svg>
-          <div class="score-num">${correct}</div>
-          <div class="score-denom">/ ${judged}問</div>
-        </div>
-        <div class="score-pct">${pct}%</div>
-      </div>
-      <div class="result-msg">${msg}</div>
-      <div class="result-breakdown">
-        <div class="result-card correct">
-          <div class="result-card-num">${correct}</div>
-          <div class="result-card-lbl">⭕ 正解</div>
-        </div>
-        <div class="result-card incorrect">
-          <div class="result-card-num">${incorrect}</div>
-          <div class="result-card-lbl">❌ 不正解</div>
-        </div>
-        <div class="result-card">
-          <div class="result-card-num">${total - judged}</div>
-          <div class="result-card-lbl">未採点</div>
-        </div>
-        <div class="result-card">
-          <div class="result-card-num">${total}</div>
-          <div class="result-card-lbl">出題数</div>
-        </div>
-      </div>
-      <div class="result-action-row">
-        <button class="result-btn primary" onclick="startExam()">もう一度</button>
-        <button class="result-btn secondary" onclick="renderExamSetup()">設定に戻る</button>
-      </div>
-      <div class="oral-timer-section" style="margin-top:1rem;">
-        <div class="oral-timer-label">🎤 口頭試問タイム（2分）</div>
-        <div class="oral-timer-main">
-          <div class="oral-donut"><svg width="72" height="72" viewBox="0 0 72 72">
-            <circle class="oral-donut-track" cx="36" cy="36" r="28"/>
-            <circle class="oral-donut-fill" id="oral-donut-fill" cx="36" cy="36" r="28" stroke-dasharray="175.93 175.93" transform="rotate(-90 36 36)"/>
-          </svg></div>
-          <div class="oral-clock" id="oral-clock">2:00</div>
-        </div>
-        <div class="oral-timer-btns">
-          <button class="oral-btn start" id="oral-start-btn" onclick="oralTimerStart()">▶ スタート</button>
-          <button class="oral-btn pause" id="oral-pause-btn" onclick="oralTimerPause()" style="display:none">⏸ 一時停止</button>
-          <button class="oral-btn reset" onclick="oralTimerReset()">↺ リセット</button>
-        </div>
-        <div class="oral-done-msg" id="oral-done-msg">⏰ 口頭試問終了！</div>
-      </div>
-    </div>`;
-  setTimeout(()=>{if(typeof oralTimerReset==='function')oralTimerReset();},50);
-}
 
 
 /* ════════════════════════════════════════
@@ -1957,6 +1822,8 @@ let exam = {
   timerMin: 3,
   timerSec: 0,
   lastQuestions: [],
+  detailJudges: {},
+  studentId: '',
 };
 
 /* ── タイマー状態 ── */
@@ -2023,7 +1890,7 @@ function updateTimerUI() {
   const warning = pctNum <= 25 && !danger;
   const state   = danger ? ' danger' : warning ? ' warning' : '';
   clock.className = 'timer-clock' + state;
-
+  if (sub) sub.textContent = '残り ' + pctNum + '%';
   if (fill) {
     const circ = 125.66;
     fill.setAttribute('stroke-dasharray', (pct * circ) + ' ' + circ);
@@ -2038,12 +1905,10 @@ function toggleTimerPause() {
 }
 
 function startOralFromTimer() {
-  const inline = document.getElementById('oral-inline-section');
-  const timerInner = document.getElementById('timer-section-inner');
-  if (inline && timerInner) {
-    timerInner.style.display = 'none';
-    inline.style.display = 'flex';
-  }
+  var inner=document.getElementById('timer-section-inner');
+  var inline=document.getElementById('oral-inline-section');
+  if(inner) inner.style.display='none';
+  if(inline) inline.style.display='flex';
   oralExamReset();
   setTimeout(oralExamStart, 300);
 }
@@ -2053,17 +1918,16 @@ function onTimerExpired() {
   if (banner) banner.classList.add('visible');
   const clock = document.getElementById('timer-clock');
   if (clock) { clock.textContent = '00:00'; clock.className = 'timer-clock danger'; }
-
+  const sub = document.getElementById('timer-sub');
+  if (sub) sub.textContent = '残り 0%';
   const fill = document.getElementById('timer-donut-fill');
   if (fill) { fill.setAttribute('stroke-dasharray','0 125.66'); fill.className.baseVal='timer-donut-fill danger'; }
-  // 上部タイマーを口頭試問に切り替え
-  const inline = document.getElementById('oral-inline-section');
-  const timerInner = document.getElementById('timer-section-inner');
-  if (inline && timerInner) {
-    timerInner.style.display = 'none';
-    inline.style.display = 'flex';
-  }
-  setTimeout(oralExamStart, 800);
+  // タイマーバーを口頭試問に切り替え
+  const timerInner=document.getElementById('timer-section-inner');
+  const oralInline=document.getElementById('oral-inline-section');
+  if(timerInner) timerInner.style.display='none';
+  if(oralInline) oralInline.style.display='flex';
+  setTimeout(function(){if(typeof oralExamStart==='function')oralExamStart();},800);
 }
 
 /* モーダル開閉 */
@@ -2074,18 +1938,7 @@ function openExamSetup() {
   document.getElementById('exam-modal').classList.add('visible');
   if (sidebarOpen) toggleSidebar();
 }
-function closeExamModal() {
-  stopTimer();
-  if(typeof oralExamReset==='function') oralExamReset();
-  // タイマーバーの表示をリセット
-  const inline = document.getElementById('oral-inline-section');
-  const timerInner = document.getElementById('timer-section-inner');
-  if (inline) inline.style.display = 'none';
-  if (timerInner) timerInner.style.display = '';
-  projMode = false;
-  document.body.classList.remove('proj-mode');
-  document.getElementById('exam-modal').classList.remove('visible');
-}
+
 document.getElementById('exam-modal').addEventListener('click', function(e) {
   if (e.target === this) closeExamModal();
 });
@@ -2141,6 +1994,13 @@ function renderSetup() {
           <label>秒</label>
         </div>
       </div>
+      <div class="setup-section">
+        <div class="setup-label">学籍番号（任意）</div>
+        <input type="text" id="student-id-input" class="student-id-input"
+          placeholder="例：2024001"
+          value="${exam.studentId}"
+          oninput="exam.studentId=this.value">
+      </div>
       <button class="setup-start-btn" ${avail===0?'disabled':''} onclick="startExam()">
         試験を開始する →
       </button>
@@ -2150,10 +2010,12 @@ function renderSetup() {
   const _ti = document.getElementById('timer-inputs');
   const _mn = document.getElementById('timer-min');
   const _sc = document.getElementById('timer-sec');
+  const _sid = document.getElementById('student-id-input');
   if (_cb) _cb.checked = exam.timerEnabled;
   if (_ti) _ti.classList.toggle('disabled', !exam.timerEnabled);
   if (_mn) _mn.value = exam.timerMin;
   if (_sc) _sc.value = exam.timerSec;
+  if (_sid) _sid.value = exam.studentId || '';
 }
 
 function toggleExamCat(cat) {
@@ -2172,69 +2034,7 @@ function onCountChange(v) {
 }
 
 /* ── 試験開始 ── */
-function startExam() {
-  const pool = ALL.filter(t => exam.selectedCats.has(t.category));
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
 
-  // ── 同時出題しない組み合わせ ──
-  const EXCLUDE_PAIRS = [
-    ['下肢伸展挙上テスト（SLR）', 'ガワーズ・ブラガード徴候'],
-    ['アイヒホッフテスト',         'フィンケルシュタインテスト'],
-    ['大腿神経伸展テスト（FNS）',  'エリー徴候'],
-    ['トムゼンテスト',             '逆トムゼンテスト'],
-    ['内反ストレステスト',         '外反ストレステスト'],
-  ];
-
-  // ── 直前の出題履歴を除外 ──
-  const prevNames = new Set(exam.lastQuestions || []);
-
-  // プールから直前問題を後ろに回す（完全除外はしない。数が足りない場合に備え）
-  const preferred = pool.filter(t => !prevNames.has(t.name));
-  const fallback  = pool.filter(t =>  prevNames.has(t.name));
-  const ordered   = [...preferred, ...fallback];
-
-  let sliced = ordered.slice(0, exam.count);
-
-  // ── ペア除外 ──
-  for (const [nameA, nameB] of EXCLUDE_PAIRS) {
-    const hasA = sliced.some(t => t.name === nameA);
-    const hasB = sliced.some(t => t.name === nameB);
-    if (hasA && hasB) {
-      sliced = sliced.filter(t => t.name !== nameB);
-      const usedNames = new Set(sliced.map(t => t.name));
-      const exclude = new Set([nameA, nameB]);
-      const replacement = ordered.find(t => !usedNames.has(t.name) && !exclude.has(t.name));
-      if (replacement) { sliced.push(replacement); usedNames.add(replacement.name); }
-    }
-  }
-
-  // ── 腱反射は最大1問 ──
-  const kenReflex = sliced.filter(t => t.category === '腱反射');
-  if (kenReflex.length > 1) {
-    const toRemove = kenReflex.slice(1);
-    sliced = sliced.filter(t => !toRemove.includes(t));
-    const usedNames = new Set(sliced.map(t => t.name));
-    for (const removed of toRemove) {
-      const replacement = ordered.find(t => !usedNames.has(t.name) && t.category !== '腱反射');
-      if (replacement) { sliced.push(replacement); usedNames.add(replacement.name); }
-    }
-  }
-
-  exam.questions = sliced;
-  // ── 今回の出題履歴を保存 ──
-  exam.lastQuestions = sliced.map(t => t.name);
-
-  exam.judges = {};
-  exam.revealed = {};
-  exam.questions.forEach((_, i) => { exam.judges[i] = null; exam.revealed[i] = {}; });
-  exam.phase = 'exam';
-  if (exam.timerEnabled) readTimerInputs();
-  renderExamList();
-  startTimer();
-}
 
 /* ── 試験リスト画面 ── */
 function judgeEmoji(j) {
@@ -2287,6 +2087,7 @@ function openExamDetail(idx) {
     disBlock.style.display = 'none';
   }
 
+  if(!exam.detailJudges[idx]) exam.detailJudges[idx]={positive:null,disease:null};
   updateDetailJudgeBtns(idx);
   document.getElementById('exam-detail-overlay').classList.add('visible');
 }
@@ -2341,14 +2142,34 @@ function setJudgeFromDetail(val) {
   if (currentDetailIdx === null) return;
   setJudge(currentDetailIdx, val);
 }
+function setDetailJudge(field, val) {
+  if (currentDetailIdx === null) return;
+  if(!exam.detailJudges[currentDetailIdx]) exam.detailJudges[currentDetailIdx]={positive:null,disease:null};
+  const cur=exam.detailJudges[currentDetailIdx][field];
+  exam.detailJudges[currentDetailIdx][field]=cur===val?null:val;
+  updateDetailJudgeBtns(currentDetailIdx);
+}
 
 function updateDetailJudgeBtns(idx) {
   if (currentDetailIdx !== idx) return;
   const j = exam.judges[idx];
   ['good','half','bad'].forEach(v => {
-    const btn = document.getElementById('edm-j-' + v);
-    if (btn) btn.classList.toggle('selected', j === v);
+    const btn = document.getElementById('edm-j-'+v);
+    if(btn) btn.classList.toggle('selected', j===v);
   });
+  if(!exam.detailJudges[idx]) exam.detailJudges[idx]={positive:null,disease:null};
+  const dj=exam.detailJudges[idx];
+  ['good','half','bad'].forEach(v=>{
+    const pb=document.getElementById('edm-dj-pos-'+v);
+    const db=document.getElementById('edm-dj-dis-'+v);
+    if(pb) pb.classList.toggle('selected',dj.positive===v);
+    if(db) db.classList.toggle('selected',dj.disease===v);
+  });
+  const t=exam.questions[idx];
+  const pr=document.getElementById('edm-pos-row');
+  const dr=document.getElementById('edm-dis-row');
+  if(pr) pr.style.display=t&&t.positive?'':'none';
+  if(dr) dr.style.display=t&&t.disease?'':'none';
 }
 
 
@@ -2460,27 +2281,30 @@ function renderExamList() {
               stroke-dasharray="125.66 125.66"/>
           </svg>
         </div>
-        <div>
-          <div class="timer-clock" id="timer-clock">--:--</div>
+        <div class="timer-clock" id="timer-clock">--:--</div>
+        <div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0;">
+          <button class="timer-pause-btn" id="timer-pause-btn" onclick="toggleTimerPause()">一時停止</button>
+          <button class="timer-oral-btn" onclick="startOralFromTimer()">🎤 口頭試問</button>
         </div>
-        <button class="timer-pause-btn" id="timer-pause-btn" onclick="toggleTimerPause()">一時停止</button>
-        <button class="timer-oral-btn" onclick="startOralFromTimer()">🎤 口頭試問</button>
       </div>
-      <!-- 口頭試問タイマー（インライン） -->
+      <!-- 口頭試問タイマー（試験終了後に切り替え） -->
       <div class="oral-inline-section" id="oral-inline-section" style="display:none;">
         <div class="oral-inline-donut">
-          <svg width="44" height="44" viewBox="0 0 44 44">
-            <circle class="oral-donut-track" cx="22" cy="22" r="17" stroke-width="5"/>
-            <circle class="oral-donut-fill" id="oral-exam-fill" cx="22" cy="22" r="17"
-              stroke-dasharray="106.81 106.81" transform="rotate(-90 22 22)" stroke-width="5"/>
+          <svg width="48" height="48" viewBox="0 0 48 48">
+            <circle cx="24" cy="24" r="18" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="6"/>
+            <circle id="oral-exam-fill" cx="24" cy="24" r="18" fill="none" stroke="#60c8ff"
+              stroke-width="6" stroke-linecap="round" stroke-dasharray="113.1 113.1" transform="rotate(-90 24 24)"/>
           </svg>
         </div>
         <div>
           <div class="oral-inline-clock" id="oral-exam-clock">2:00</div>
+          <div style="font-size:0.62rem;color:rgba(255,255,255,0.4);margin-top:1px;">口頭試問</div>
         </div>
-        <button class="timer-pause-btn" id="oral-exam-pause-btn" onclick="oralExamPause()" style="display:none">一時停止</button>
-        <button class="timer-pause-btn" id="oral-exam-start-btn" onclick="oralExamStart()">▶ 再開</button>
-        <button class="timer-oral-btn" onclick="oralExamReset()">↺</button>
+        <div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0;">
+          <button class="timer-pause-btn" id="oral-exam-pause-btn" onclick="oralExamPause()" style="display:none">一時停止</button>
+          <button class="timer-pause-btn" id="oral-exam-resume-btn" onclick="oralExamStart()" style="display:none">▶ 再開</button>
+          <button class="timer-oral-btn" onclick="oralExamReset()">↺ リセット</button>
+        </div>
       </div>
     </div>
     <div class="timer-expired-banner" id="timer-expired-banner">⏰ 時間切れ！　採点して結果を確認してください</div>
@@ -2492,23 +2316,21 @@ function renderExamList() {
       <button class="setup-start-btn" onclick="finishExam()" style="background:#2d5fbf;">
         結果を見る →
       </button>
-      <div class="oral-exam-section" id="oral-exam-section" style="display:none;">
-        <div class="oral-timer-section">
-          <div class="oral-timer-label">🎤 口頭試問タイム（2分）</div>
-          <div class="oral-timer-main">
-            <div class="oral-donut"><svg width="72" height="72" viewBox="0 0 72 72">
-              <circle class="oral-donut-track" cx="36" cy="36" r="28"/>
-              <circle class="oral-donut-fill" id="oral-exam-fill" cx="36" cy="36" r="28" stroke-dasharray="175.93 175.93" transform="rotate(-90 36 36)"/>
-            </svg></div>
-            <div class="oral-clock" id="oral-exam-clock">2:00</div>
-          </div>
-          <div class="oral-timer-btns">
-            <button class="oral-btn start" id="oral-exam-start-btn" onclick="oralExamStart()">▶ スタート</button>
-            <button class="oral-btn pause" id="oral-exam-pause-btn" onclick="oralExamPause()" style="display:none">⏸ 一時停止</button>
-            <button class="oral-btn reset" onclick="oralExamReset()">↺ リセット</button>
-          </div>
-          <div class="oral-done-msg" id="oral-exam-done-msg">⏰ 口頭試問終了！</div>
+      <div class="oral-exam-section" id="oral-exam-section" style="display:none;margin-top:1rem;padding:1rem;background:#0a1a3a;border-radius:14px;">
+        <div style="text-align:center;font-size:0.7rem;font-weight:700;color:rgba(255,255,255,0.45);letter-spacing:0.1em;margin-bottom:0.5rem;">🎤 口頭試問タイム（2分）</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:0.75rem;">
+          <svg width="60" height="60" viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="6"/>
+            <circle id="oral-exam-fill" cx="30" cy="30" r="24" fill="none" stroke="#60c8ff" stroke-width="6" stroke-linecap="round" stroke-dasharray="150.8 150.8" transform="rotate(-90 30 30)"/>
+          </svg>
+          <div id="oral-exam-clock" style="font-size:2.5rem;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;">2:00</div>
         </div>
+        <div style="display:flex;gap:8px;">
+          <button id="oral-exam-start-btn" onclick="oralExamStart()" style="flex:1;padding:0.6rem;border-radius:8px;background:#1a5cbf;color:#fff;border:none;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;">▶ スタート</button>
+          <button id="oral-exam-pause-btn" onclick="oralExamPause()" style="display:none;flex:1;padding:0.6rem;border-radius:8px;background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2);font-family:inherit;font-size:0.85rem;cursor:pointer;">⏸ 一時停止</button>
+          <button onclick="oralExamReset()" style="padding:0.6rem 0.9rem;border-radius:8px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.12);font-family:inherit;font-size:0.85rem;cursor:pointer;">↺</button>
+        </div>
+        <div id="oral-exam-done-msg" style="display:none;text-align:center;color:#4de890;font-weight:700;margin-top:0.5rem;">⏰ 口頭試問終了！</div>
       </div>
     </div>`;
 
@@ -2548,193 +2370,289 @@ function setJudge(idx, val) {
 /* ── 結果画面 ── */
 function finishExam() {
   stopTimer();
-  setTimeout(()=>{if(typeof oralTimerReset==="function")oralTimerReset();},50);
-  exam.phase = 'result';
-  const sc = scoreCount();
-  const pct = sc.total > 0 ? Math.round((sc.good / sc.total) * 100) : 0;
-  const msg = pct >= 90 ? '🎉 完璧です！素晴らしい理解度です！'
-    : pct >= 70 ? '👍 よくできました！少し復習して完璧にしよう。'
-    : pct >= 50 ? '📖 半分以上できています。苦手な箇所を重点的に。'
-    : '💪 まだまだこれから！繰り返し練習しましょう。';
+  var tb=document.getElementById('timer-bar');
+  if(tb) tb.style.display='none';
+  var ti=document.getElementById('timer-section-inner');
+  var oi=document.getElementById('oral-inline-section');
+  if(ti) ti.style.display='';
+  if(oi) oi.style.display='none';
+  exam.phase='result';
 
-  // ドーナツグラフ
-  const R = 54, circ = 2 * Math.PI * R;
-  const seg = (n, col, offset) => n > 0
-    ? `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${col}" stroke-width="14"
-        stroke-dasharray="${(n/sc.total)*circ} ${circ}"
-        stroke-dashoffset="${-offset}" stroke-linecap="butt"/>`
-    : '';
-  const gArc = (sc.good / sc.total) * circ;
-  const hArc = (sc.half / sc.total) * circ;
-  const bArc = (sc.bad  / sc.total) * circ;
-  const nArc = (sc.none / sc.total) * circ;
-  const donut = `<svg width="140" height="140" viewBox="0 0 140 140">
-    <circle cx="70" cy="70" r="${R}" fill="none" stroke="#eee" stroke-width="14"/>
-    ${seg(sc.good, '#4da870', circ*0.25)}
-    ${seg(sc.half, '#d4a800', circ*0.25 - gArc)}
-    ${seg(sc.bad,  '#cc5533', circ*0.25 - gArc - hArc)}
-    ${seg(sc.none, '#ccc',    circ*0.25 - gArc - hArc - bArc)}
-  </svg>`;
+  var SCORE={good:10,half:5,bad:0};
+  var qs=exam.questions;
+  var total=0;
 
-  // 詳細リスト
-  const detail = exam.questions.map((t, i) => {
-    const j = exam.judges[i];
-    const em = j === 'good' ? '○' : j === 'half' ? '▲' : j === 'bad' ? '×' : '－';
-    const col = j === 'good' ? '#0a4a2a' : j === 'half' ? '#6a4a00' : j === 'bad' ? '#6b1a00' : '#aaa';
-    return `<div class="result-detail-item">
-      <span class="rdi-num">${i+1}</span>
-      <div style="flex:1;min-width:0;">
-        <div class="rdi-name">${escHtml(t.name)}</div>
-      </div>
-      <span class="rdi-badge" style="color:${col};font-size:1.1rem;">${em}</span>
-    </div>`;
+  var rows=qs.map(function(t,i){
+    var j=exam.judges[i];
+    var dj=exam.detailJudges[i]||{positive:null,disease:null};
+    var hasPos=!!(t.positive&&t.positive.trim());
+    var hasDis=!!(t.disease&&t.disease.trim());
+
+    var s1=j?SCORE[j]:0;
+    var s2=(hasPos&&dj.positive)?SCORE[dj.positive]:0;
+    var s3=(hasDis&&dj.disease)?SCORE[dj.disease]:0;
+    var sub=s1+s2+s3;
+    total+=sub;
+
+    var jE=j?(j==='good'?'○':j==='half'?'▲':'×'):'－';
+    var pE=hasPos?(dj.positive?(dj.positive==='good'?'○':dj.positive==='half'?'▲':'×'):'－'):'―';
+    var dE=hasDis?(dj.disease?(dj.disease==='good'?'○':dj.disease==='half'?'▲':'×'):'－'):'―';
+    var jC=j==='good'?'score-good':j==='half'?'score-half':j==='bad'?'score-bad':'';
+    return '<tr>'
+      +'<td class="td-name">'+escHtml(shortName(t.name))+'</td>'
+      +'<td class="'+jC+'">'+jE+'</td>'
+      +'<td>'+pE+'</td>'
+      +'<td>'+dE+'</td>'
+      +'<td class="score-cell">'+sub+'</td>'
+      +'</tr>';
   }).join('');
 
-  document.getElementById('exam-modal-inner').innerHTML = `
-    <div class="modal-header">
-      <h2>試験結果</h2>
-      <button class="modal-close" onclick="closeExamModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="result-donut">
-        ${donut}
-        <div class="result-score-txt">${sc.good} / ${sc.total}</div>
-        <div class="result-score-sub">○ 正解数 / 出題数　（${pct}%）</div>
-      </div>
-      <div class="result-msg">${msg}</div>
-      <div class="result-chips">
-        <div class="result-chip rg"><div class="rc-num">${sc.good}</div><div class="rc-lbl">○ できた</div></div>
-        <div class="result-chip rh"><div class="rc-num">${sc.half}</div><div class="rc-lbl">▲ だいたい</div></div>
-        <div class="result-chip rb"><div class="rc-num">${sc.bad}</div> <div class="rc-lbl">× できなかった</div></div>
-      </div>
-      <div class="result-detail-list">${detail}</div>
-      <div class="result-actions">
-        <button class="result-btn primary" onclick="startExam()">もう一度</button>
-        <button class="result-btn secondary" onclick="renderSetup()">設定に戻る</button>
-      </div>
-    </div>`;
+  var sid=exam.studentId?'<div class="result-student-id">学籍番号：'+escHtml(exam.studentId)+'</div>':'';
+
+  document.getElementById('exam-modal-inner').innerHTML=
+    '<div class="modal-header">'
+    +'<h2>試験結果</h2>'
+    +'<button class="modal-close" onclick="closeExamModal()">✕</button>'
+    +'</div>'
+    +'<div class="modal-body">'+sid
+    +'<div class="result-total-score">'
+    +'<span class="score-big">'+total+'</span>'
+    +'<span class="score-max">点</span>'
+    +'</div>'
+    +'<table class="result-breakdown-table">'
+    +'<thead><tr><th>検査名</th><th>検査</th><th>陽性</th><th>鑑別</th><th>点数</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody></table>'
+    +'<div class="result-action-row">'
+    +'<button class="result-btn primary" onclick="startExam()">もう一度</button>'
+    +'<button class="result-btn secondary" onclick="renderSetup()">設定に戻る</button>'
+    +'</div>'
+    +'<button class="record-save-btn" onclick="doSaveRecord()">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
+    +'記録する'
+    +'</button>'
+    +'<div class="record-saved-msg" id="record-saved-msg">保存しました</div>'
+    +'</div>';
 }
 
-/* ════ 口頭試問タイマー（試験タイマー終了後） ════ */
-const ORAL_EXAM_TOTAL = 120;
-let oralExamState = { remain: ORAL_EXAM_TOTAL, running: false, interval: null };
-function oralExamStart() {
-  if (oralExamState.remain <= 0) oralExamReset();
-  oralExamState.running = true;
-  const sb = document.getElementById('oral-exam-start-btn');
-  const pb = document.getElementById('oral-exam-pause-btn');
-  if (sb) sb.style.display = 'none';
-  if (pb) pb.style.display = '';
-  oralExamState.interval = setInterval(oralExamTick, 1000);
+const ORAL_EXAM_TOTAL=120;
+let oralExamState={remain:ORAL_EXAM_TOTAL,running:false,interval:null};
+function oralExamStart(){
+  if(oralExamState.remain<=0)oralExamReset();
+  oralExamState.running=true;
+  var sb=document.getElementById('oral-exam-start-btn');
+  var pb=document.getElementById('oral-exam-pause-btn');
+  var rb=document.getElementById('oral-exam-resume-btn');
+  if(sb)sb.style.display='none'; if(pb)pb.style.display=''; if(rb)rb.style.display='none';
+  oralExamState.interval=setInterval(oralExamTick,1000);
 }
-function oralExamPause() {
-  oralExamState.running = false; clearInterval(oralExamState.interval);
-  const sb = document.getElementById('oral-exam-start-btn');
-  const pb = document.getElementById('oral-exam-pause-btn');
-  if (sb) { sb.style.display = ''; sb.innerHTML = '▶ 再開'; }
-  if (pb) pb.style.display = 'none';
-}
-function oralExamReset() {
-  clearInterval(oralExamState.interval);
-  oralExamState = { remain: ORAL_EXAM_TOTAL, running: false, interval: null };
-  const sb = document.getElementById('oral-exam-start-btn');
-  const pb = document.getElementById('oral-exam-pause-btn');
-  const dm = document.getElementById('oral-exam-done-msg');
-  if (sb) { sb.style.display = ''; sb.innerHTML = '▶ スタート'; }
-  if (pb) pb.style.display = 'none';
-  if (dm) dm.classList.remove('visible');
-  oralExamUpdateUI();
-}
-function oralExamTick() {
-  if (oralExamState.remain <= 0) { clearInterval(oralExamState.interval); oralExamExpired(); return; }
-  oralExamState.remain--; oralExamUpdateUI();
-}
-function oralExamUpdateUI() {
-  const clock = document.getElementById('oral-exam-clock');
-  const fill  = document.getElementById('oral-exam-fill');
-  if (!clock) return;
-  const r = oralExamState.remain;
-  clock.textContent = Math.floor(r/60) + ':' + String(r%60).padStart(2,'0');
-  const pct = r / ORAL_EXAM_TOTAL; const pctN = Math.round(pct*100);
-  const state = pctN<=10?' danger':pctN<=25?' warning':'';
-  // インライン表示の場合はoral-inline-clock、下部表示の場合はoral-clock
-  clock.className = (clock.classList.contains('oral-inline-clock') ? 'oral-inline-clock' : 'oral-clock') + state;
-  const circ = 106.81;
-  if (fill) { fill.setAttribute('stroke-dasharray',(pct*circ)+' '+circ); fill.className.baseVal='oral-donut-fill'+state; }
-}
-function oralExamExpired() {
-  const clock=document.getElementById('oral-exam-clock');
-  const fill=document.getElementById('oral-exam-fill');
-  const sb=document.getElementById('oral-exam-start-btn');
-  const pb=document.getElementById('oral-exam-pause-btn');
-  if(clock){clock.textContent='0:00';clock.className=(clock.classList.contains('oral-inline-clock')?'oral-inline-clock':'oral-clock')+' done';}
+function oralExamPause(){
+  oralExamState.running=false;clearInterval(oralExamState.interval);
+  var sb=document.getElementById('oral-exam-start-btn');
+  var pb=document.getElementById('oral-exam-pause-btn');
+  var rb=document.getElementById('oral-exam-resume-btn');
   if(sb){sb.style.display='';sb.innerHTML='▶ 再開';}
-  if(pb) pb.style.display='none';
-  if(fill){fill.setAttribute('stroke-dasharray','0 106.81');fill.style.stroke='#4de890';}
+  if(pb)pb.style.display='none';
+  if(rb)rb.style.display='';
+}
+function oralExamReset(){
+  clearInterval(oralExamState.interval);oralExamState={remain:ORAL_EXAM_TOTAL,running:false,interval:null};
+  var sb=document.getElementById('oral-exam-start-btn'),pb=document.getElementById('oral-exam-pause-btn'),dm=document.getElementById('oral-exam-done-msg');
+  if(sb){sb.style.display='';sb.innerHTML='▶ スタート';}if(pb)pb.style.display='none';
+  if(dm)dm.style.display='none';oralExamUpdateUI();
+}
+function oralExamTick(){if(oralExamState.remain<=0){clearInterval(oralExamState.interval);oralExamExpired();return;}oralExamState.remain--;oralExamUpdateUI();}
+function oralExamUpdateUI(){
+  var clock=document.getElementById('oral-exam-clock'),fill=document.getElementById('oral-exam-fill');
+  if(!clock)return;
+  var r=oralExamState.remain;clock.textContent=Math.floor(r/60)+':'+String(r%60).padStart(2,'0');
+  var pct=r/ORAL_EXAM_TOTAL,pctN=Math.round(pct*100);
+  var col=pctN<=10?'#f07060':pctN<=25?'#f0d060':'#60c8ff';
+  if(fill){fill.setAttribute('stroke-dasharray',(pct*113.1)+' 113.1');fill.style.stroke=col;}
+  clock.style.color=pctN<=10?'#f07060':pctN<=25?'#f0d060':'#fff';
+}
+function oralExamExpired(){
+  var clock=document.getElementById('oral-exam-clock'),dm=document.getElementById('oral-exam-done-msg');
+  var sb=document.getElementById('oral-exam-start-btn'),pb=document.getElementById('oral-exam-pause-btn');
+  var fill=document.getElementById('oral-exam-fill');
+  if(clock){clock.textContent='0:00';clock.style.color='#4de890';}
+  if(dm)dm.style.display='block';
+  if(sb){sb.style.display='';sb.innerHTML='▶ スタート';}if(pb)pb.style.display='none';
+  if(fill){fill.setAttribute('stroke-dasharray','0 150.8');fill.style.stroke='#4de890';}
+}
+const ORAL_TOTAL=120;
+let oralState={remain:ORAL_TOTAL,running:false,interval:null};
+function oralTimerStart(){
+  if(oralState.remain<=0)oralTimerReset();oralState.running=true;
+  var sb=document.getElementById('oral-start-btn'),pb=document.getElementById('oral-pause-btn');
+  if(sb)sb.style.display='none';if(pb)pb.style.display='';
+  oralState.interval=setInterval(oralTimerTick,1000);
+}
+function oralTimerPause(){
+  oralState.running=false;clearInterval(oralState.interval);
+  var sb=document.getElementById('oral-start-btn'),pb=document.getElementById('oral-pause-btn');
+  if(sb){sb.style.display='';sb.innerHTML='▶ 再開';}if(pb)pb.style.display='none';
+}
+function oralTimerReset(){
+  clearInterval(oralState.interval);oralState={remain:ORAL_TOTAL,running:false,interval:null};
+  var sb=document.getElementById('oral-start-btn'),pb=document.getElementById('oral-pause-btn'),dm=document.getElementById('oral-done-msg');
+  if(sb){sb.style.display='';sb.innerHTML='▶ スタート';}if(pb)pb.style.display='none';
+  if(dm)dm.style.display='none';oralTimerUpdateUI();
+}
+function oralTimerTick(){if(oralState.remain<=0){clearInterval(oralState.interval);oralTimerExpired();return;}oralState.remain--;oralTimerUpdateUI();}
+function oralTimerUpdateUI(){
+  var clock=document.getElementById('oral-clock'),fill=document.getElementById('oral-donut-fill');
+  if(!clock)return;
+  var r=oralState.remain;clock.textContent=Math.floor(r/60)+':'+String(r%60).padStart(2,'0');
+  var pct=r/ORAL_TOTAL,pctN=Math.round(pct*100);
+  var col=pctN<=10?'#f07060':pctN<=25?'#f0d060':'#60c8ff';
+  clock.style.color=pctN<=10?'#f07060':pctN<=25?'#f0d060':'#fff';
+  if(fill){fill.setAttribute('stroke-dasharray',(pct*150.8)+' 150.8');fill.style.stroke=col;}
+}
+function oralTimerExpired(){
+  var clock=document.getElementById('oral-clock'),dm=document.getElementById('oral-done-msg');
+  var sb=document.getElementById('oral-start-btn'),fill=document.getElementById('oral-donut-fill');
+  if(clock){clock.textContent='0:00';clock.style.color='#4de890';}
+  if(dm)dm.style.display='block';
+  if(sb){sb.style.display='';sb.innerHTML='▶ スタート';}
+  if(fill){fill.setAttribute('stroke-dasharray','0 150.8');fill.style.stroke='#4de890';}
 }
 
-/* ════ 口頭試問タイマー（結果画面） ════ */
-const ORAL_TOTAL = 120;
-let oralState = { remain: ORAL_TOTAL, running: false, interval: null };
-function oralTimerStart() {
-  if (oralState.remain <= 0) oralTimerReset();
-  oralState.running = true;
-  const sb = document.getElementById('oral-start-btn');
-  const pb = document.getElementById('oral-pause-btn');
-  if (sb) sb.style.display = 'none';
-  if (pb) pb.style.display = '';
-  oralState.interval = setInterval(oralTimerTick, 1000);
+/* ════ 記録機能 ════ */
+const RECORD_KEY = 'atm_exam_records';
+
+function getRecords() {
+  try { return JSON.parse(localStorage.getItem(RECORD_KEY) || '[]'); }
+  catch(e) { return []; }
 }
-function oralTimerPause() {
-  oralState.running = false; clearInterval(oralState.interval);
-  const sb = document.getElementById('oral-start-btn');
-  const pb = document.getElementById('oral-pause-btn');
-  if (sb) { sb.style.display = ''; sb.innerHTML = '▶ 再開'; }
-  if (pb) pb.style.display = 'none';
+function saveRecords(records) {
+  localStorage.setItem(RECORD_KEY, JSON.stringify(records));
 }
-function oralTimerReset() {
-  clearInterval(oralState.interval);
-  oralState = { remain: ORAL_TOTAL, running: false, interval: null };
-  const sb=document.getElementById('oral-start-btn');
-  const pb=document.getElementById('oral-pause-btn');
-  const dm=document.getElementById('oral-done-msg');
-  if(sb){sb.style.display='';sb.innerHTML='▶ スタート';}
-  if(pb) pb.style.display='none';
-  if(dm) dm.classList.remove('visible');
-  oralTimerUpdateUI();
+
+function saveExamRecord() {
+  var SCORE={good:10,half:5,bad:0};
+  var qs=exam.questions;
+  var total=0;
+  var details=qs.map(function(t,i){
+    var j=exam.judges[i];
+    var dj=exam.detailJudges[i]||{positive:null,disease:null};
+    var hasPos=!!(t.positive&&t.positive.trim());
+    var hasDis=!!(t.disease&&t.disease.trim());
+    var s1=j?SCORE[j]:0;
+    var s2=(hasPos&&dj.positive)?SCORE[dj.positive]:0;
+    var s3=(hasDis&&dj.disease)?SCORE[dj.disease]:0;
+    var sub=s1+s2+s3; total+=sub;
+    return {
+      name: t.name,
+      judge: j||null,
+      posJudge: hasPos?(dj.positive||null):null,
+      disJudge: hasDis?(dj.disease||null):null,
+      score: sub
+    };
+  });
+  var record = {
+    id: Date.now(),
+    date: new Date().toLocaleString('ja-JP'),
+    studentId: exam.studentId||'',
+    total: total,
+    count: qs.length,
+    details: details
+  };
+  var records = getRecords();
+  records.unshift(record);
+  if(records.length > 200) records = records.slice(0,200);
+  saveRecords(records);
+  return record;
 }
-function oralTimerTick() {
-  if(oralState.remain<=0){clearInterval(oralState.interval);oralTimerExpired();return;}
-  oralState.remain--; oralTimerUpdateUI();
+
+function openRecordList() {
+  var records = getRecords();
+  var tbody = records.length === 0
+    ? '<tr><td colspan="5" class="record-empty">記録がありません</td></tr>'
+    : records.map(function(r,idx){
+        return '<tr>'
+          +'<td>'+r.date+'</td>'
+          +'<td>'+(r.studentId||'―')+'</td>'
+          +'<td style="font-weight:700;color:var(--accent);">'+r.total+'点</td>'
+          +'<td>'+r.count+'問</td>'
+          +'<td><button class="record-detail-btn" onclick="openRecordDetail('+r.id+')">詳細</button></td>'
+          +'</tr>';
+      }).join('');
+  document.getElementById('record-modal-inner').innerHTML =
+    '<div class="modal-header">'
+    +'<h2>記録一覧</h2>'
+    +'<button class="modal-close" onclick="closeRecordModal()">✕</button>'
+    +'</div>'
+    +'<div class="modal-body">'
+    +'<div class="record-actions">'
+    +'<button class="record-clear-btn" onclick="clearRecords()">すべて削除</button>'
+    +'</div>'
+    +'<table class="record-table">'
+    +'<thead><tr><th>日時</th><th>学籍番号</th><th>合計</th><th>問題数</th><th></th></tr></thead>'
+    +'<tbody>'+tbody+'</tbody>'
+    +'</table>'
+    +'</div>';
+  document.getElementById('record-modal').classList.add('visible');
+  if(typeof sidebarOpen !== 'undefined' && sidebarOpen) toggleSidebar();
 }
-function oralTimerUpdateUI() {
-  const clock=document.getElementById('oral-clock');
-  const fill=document.getElementById('oral-donut-fill');
-  if(!clock) return;
-  const r=oralState.remain;
-  clock.textContent=Math.floor(r/60)+':'+String(r%60).padStart(2,'0');
-  const pct=r/ORAL_TOTAL; const pctN=Math.round(pct*100);
-  const state=pctN<=10?' danger':pctN<=25?' warning':'';
-  clock.className='oral-clock'+state;
-  if(fill){fill.setAttribute('stroke-dasharray',(pct*175.93)+' 175.93');fill.className.baseVal='oral-donut-fill'+state;}
+
+function closeRecordModal() {
+  document.getElementById('record-modal').classList.remove('visible');
 }
-function oralTimerExpired() {
-  const clock=document.getElementById('oral-clock');
-  const dm=document.getElementById('oral-done-msg');
-  const sb=document.getElementById('oral-start-btn');
-  const fill=document.getElementById('oral-donut-fill');
-  if(clock){clock.textContent='0:00';clock.className='oral-clock done';}
-  if(dm) dm.classList.add('visible');
-  if(sb){sb.style.display='';sb.innerHTML='▶ スタート';}
-  if(fill){fill.setAttribute('stroke-dasharray','0 175.93');fill.style.stroke='#4de890';}
+
+function openRecordDetail(id) {
+  var records = getRecords();
+  var r = records.find(function(rec){ return rec.id===id; });
+  if(!r) return;
+  var jE=function(j){return j==='good'?'○':j==='half'?'▲':j==='bad'?'×':'―';};
+  var rows = r.details.map(function(d){
+    var jC=d.judge==='good'?'score-good':d.judge==='half'?'score-half':d.judge==='bad'?'score-bad':'';
+    return '<tr>'
+      +'<td class="td-name">'+escHtml(shortName(d.name))+'</td>'
+      +'<td class="'+jC+'">'+jE(d.judge)+'</td>'
+      +'<td>'+jE(d.posJudge)+'</td>'
+      +'<td>'+jE(d.disJudge)+'</td>'
+      +'<td class="score-cell">'+d.score+'</td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('record-modal-inner').innerHTML =
+    '<div class="modal-header">'
+    +'<div style="display:flex;align-items:center;gap:10px;flex:1;">'
+    +'<button class="modal-close" onclick="openRecordList()" style="font-size:0.8rem;padding:4px 10px;width:auto;">← 一覧</button>'
+    +'<h2 style="margin:0;">記録詳細</h2>'
+    +'</div>'
+    +'<button class="modal-close" onclick="closeRecordModal()">✕</button>'
+    +'</div>'
+    +'<div class="modal-body">'
+    +(r.studentId?'<div class="result-student-id">学籍番号：'+escHtml(r.studentId)+'</div>':'')
+    +'<div class="result-total-score"><span class="score-big">'+r.total+'</span><span class="score-max">点</span></div>'
+    +'<div style="text-align:center;font-size:0.78rem;color:var(--text-f);margin-bottom:1rem;">'+r.date+'　'+r.count+'問</div>'
+    +'<table class="result-breakdown-table">'
+    +'<thead><tr><th>検査名</th><th>検査</th><th>陽性</th><th>鑑別</th><th>点数</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody></table>'
+    +'</div>';
+}
+
+function clearRecords() {
+  if(!confirm('すべての記録を削除しますか？')) return;
+  localStorage.removeItem(RECORD_KEY);
+  openRecordList();
+}
+
+document.getElementById('record-modal').addEventListener('click', function(e){
+  if(e.target===this) closeRecordModal();
+});
+
+function doSaveRecord() {
+  saveExamRecord();
+  var msg = document.getElementById('record-saved-msg');
+  var btn = document.querySelector('.record-save-btn');
+  if(msg) { msg.classList.add('visible'); }
+  if(btn) { btn.disabled=true; btn.style.opacity='0.5'; }
 }
 
 render();
 // 復元後にイベントバインド
 setTimeout(bindHlEvents, 100);
 </script>
-
-</div>
-
 </body>
 </html>
